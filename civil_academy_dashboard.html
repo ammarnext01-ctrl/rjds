@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RJDS – Project Tracking Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@8.0.0/index.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050c1e;--bg2:#0b1529;--card:#101f3a;--card2:#122040;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --txt:#e2e8f0;--txt2:#94a3b8;--txt3:#64748b;
+  --blue:#3b82f6;--green:#22c55e;--red:#ef4444;--gold:#f59e0b;
+  --purple:#a78bfa;--cyan:#22d3ee;--pink:#f472b6;--orange:#fb923c;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* HEADER */
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px}
+.header-logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
+.header-titles h1{font-size:18px;font-weight:700;color:var(--txt);letter-spacing:-0.3px}
+.header-titles p{font-size:12px;color:var(--txt2);margin-top:1px}
+.header-divider{width:1px;height:36px;background:var(--border2);margin:0 8px}
+.header-badge{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--blue)}
+.header-spacer{flex:1}
+.header-date{font-size:12px;color:var(--txt2);text-align:right}
+.header-date strong{display:block;font-size:14px;font-weight:600;color:var(--txt)}
+
+/* KPI GRID */
+.kpi-section{padding:20px 24px 8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:default;transition:border-color .2s}
+.kpi-card:hover{border-color:var(--border2)}
+.kpi-card .kpi-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
+.kpi-card .kpi-label{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi-card .kpi-value{font-size:24px;font-weight:700;color:var(--txt);margin-top:3px;letter-spacing:-1px}
+.kpi-card .kpi-sub{font-size:11px;color:var(--txt3);margin-top:3px}
+.kpi-green .kpi-icon{background:rgba(34,197,94,.15);color:var(--green)}
+.kpi-red .kpi-icon{background:rgba(239,68,68,.15);color:var(--red)}
+.kpi-blue .kpi-icon{background:rgba(59,130,246,.15);color:var(--blue)}
+.kpi-gold .kpi-icon{background:rgba(245,158,11,.15);color:var(--gold)}
+.kpi-purple .kpi-icon{background:rgba(167,139,250,.15);color:var(--purple)}
+.kpi-cyan .kpi-icon{background:rgba(34,211,238,.15);color:var(--cyan)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;gap:0;padding:16px 24px;gap:16px;align-items:start}
+
+/* SIDEBAR */
+.sidebar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;position:sticky;top:16px}
+.sidebar h3{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--txt2);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.filter-group{margin-bottom:14px}
+.filter-group label{display:block;font-size:11px;color:var(--txt2);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.filter-group select{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;color:var(--txt);padding:7px 10px;font-size:12px;font-family:inherit;cursor:pointer;outline:none;transition:border-color .2s}
+.filter-group select:hover,.filter-group select:focus{border-color:var(--blue)}
+.reset-btn{width:100%;padding:9px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:8px;color:var(--red);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;transition:all .2s;text-transform:uppercase;letter-spacing:.4px}
+.reset-btn:hover{background:rgba(239,68,68,.22)}
+.filter-count{margin-top:12px;padding:8px 10px;background:rgba(59,130,246,.08);border-radius:7px;font-size:11px;color:var(--blue);text-align:center;font-weight:600;border:1px solid rgba(59,130,246,.2)}
+
+/* CHARTS AREA */
+.charts-area{display:flex;flex-direction:column;gap:16px}
+.charts-row{display:grid;gap:16px}
+.charts-row.cols-1{grid-template-columns:1fr}
+.charts-row.cols-2{grid-template-columns:1fr 1fr}
+.charts-row.cols-3{grid-template-columns:2fr 1fr 1fr}
+.charts-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+/* CHART CARD */
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.chart-card .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-card .card-title{font-size:13px;font-weight:700;color:var(--txt);letter-spacing:-.2px}
+.chart-card .card-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.chart-wrap{position:relative}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* TABLE SECTION */
+.table-section{padding:0 24px 24px}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:13px;font-weight:700;color:var(--txt)}
+.table-count{font-size:11px;color:var(--txt2);background:var(--bg2);padding:4px 10px;border-radius:6px}
+.table-wrap{overflow-x:auto;max-height:320px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{position:sticky;top:0;background:#0d1832;color:var(--txt2);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+tbody td{padding:9px 14px;color:var(--txt);font-size:12px}
+.badge{display:inline-block;padding:3px 9px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.badge-approved{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+.badge-rejected{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.badge-pending-a{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+.badge-done{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.15)}
+.badge-inprogress{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)}
+.badge-pending-s{background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.25)}
+
+/* UPLOAD SECTION */
+.upload-section{padding:16px 24px 0}
+.upload-zone{border:2px dashed rgba(59,130,246,.3);border-radius:12px;padding:22px 24px;text-align:center;cursor:pointer;transition:all .25s;background:rgba(59,130,246,.03)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--blue);background:rgba(59,130,246,.08)}
+.upload-zone .uz-icon{font-size:28px;margin-bottom:7px}
+.upload-zone h4{font-size:14px;font-weight:700;color:var(--txt);margin-bottom:3px}
+.upload-zone p{font-size:12px;color:var(--txt2)}
+.file-info-bar{margin-top:12px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;display:none;background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+.upload-btn{display:inline-block;margin-top:12px;padding:8px 22px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.upload-btn:hover{opacity:.85}
+
+/* MAPPER MODAL */
+.mapper-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.mapper-modal{background:#0d1832;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;width:100%;max-width:580px;max-height:88vh;overflow-y:auto}
+.mapper-modal h3{font-size:16px;font-weight:700;color:var(--txt);margin-bottom:5px}
+.mapper-sub{font-size:12px;color:var(--txt2);margin-bottom:18px}
+.mapper-preview{padding:10px 14px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:11px;color:var(--gold);margin-bottom:18px;line-height:1.7}
+.mapper-preview strong{display:block;margin-bottom:3px;font-size:12px}
+.mapper-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.mapper-row label{display:block;font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.mapper-row select{width:100%;background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:var(--txt);padding:8px 10px;font-size:12px;font-family:inherit;outline:none}
+.mapper-row select:focus{border-color:var(--blue)}
+.mapper-actions{display:flex;gap:10px;margin-top:4px}
+.btn-apply{flex:1;padding:11px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-apply:hover{opacity:.85}
+.btn-cancel{padding:11px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--txt2);font-family:inherit;font-size:13px;cursor:pointer}
+.btn-cancel:hover{border-color:var(--txt);color:var(--txt)}
+.mapper-note{font-size:11px;color:var(--txt3);margin-top:12px;text-align:center}
+</style>
+</head>
+<body>
+<h2 class="sr-only">RJDS Project Tracking Dashboard for Ammar Abumahfouz – interactive charts showing project approvals, statuses, and designer performance</h2>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">RJ</div>
+  <div class="header-titles">
+    <h1>RJDS</h1>
+    <p>Project Tracking Dashboard</p>
+  </div>
+  <div class="header-divider"></div>
+  <div class="header-badge">Ammar Abumahfouz</div>
+  <div class="header-spacer"></div>
+  <div class="header-date">
+    <span>Last Updated</span>
+    <strong id="hdr-date">—</strong>
+  </div>
+</div>
+
+<!-- UPLOAD SECTION -->
+<div class="upload-section">
+  <div class="upload-zone" id="upload-zone">
+    <div class="uz-icon">📊</div>
+    <h4>Upload Your Excel / CSV File</h4>
+    <p>Drag &amp; drop your project data here, or click the button below</p>
+    <p style="font-size:11px;color:var(--txt3);margin-top:2px">Supports .xlsx &middot; .xls &middot; .csv</p>
+    <button class="upload-btn" onclick="document.getElementById('excel-input').click()">📂 Choose File</button>
+    <input type="file" id="excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this)">
+    <div class="file-info-bar" id="file-info-bar">—</div>
+  </div>
+</div>
+
+<!-- MAPPER MODAL -->
+<div class="mapper-overlay" id="mapper-overlay" style="display:none">
+  <div class="mapper-modal">
+    <h3>🗂️ Map Your Excel Columns</h3>
+    <p class="mapper-sub">Match each dashboard field to the correct column in your file.</p>
+    <div class="mapper-preview" id="mapper-preview"><strong>📋 Detected columns:</strong><span id="mapper-cols"></span></div>
+    <div class="mapper-grid" id="mapper-grid"></div>
+    <div class="mapper-actions">
+      <button class="btn-cancel" onclick="closeMapper()">Cancel</button>
+      <button class="btn-apply" onclick="applyExcelData()">✅ Apply to Dashboard</button>
+    </div>
+    <p class="mapper-note">Fields left as skip will use default values</p>
+  </div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-section" id="kpi-grid"></div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR FILTERS -->
+  <aside class="sidebar">
+    <h3>🔍 Filters</h3>
+    <div class="filter-group">
+      <label>Month</label>
+      <select id="f-month" onchange="applyFilters()">
+        <option value="all">All Months</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Project Type</label>
+      <select id="f-type" onchange="applyFilters()">
+        <option value="all">All Types</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Material</label>
+      <select id="f-material" onchange="applyFilters()">
+        <option value="all">All Materials</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Designer</label>
+      <select id="f-designer" onchange="applyFilters()">
+        <option value="all">All Designers</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select id="f-status" onchange="applyFilters()">
+        <option value="all">All Statuses</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Approval</label>
+      <select id="f-approval" onchange="applyFilters()">
+        <option value="all">All Approvals</option>
+      </select>
+    </div>
+    <button class="reset-btn" onclick="resetFilters()">↺ Reset All Filters</button>
+    <div class="filter-count" id="filter-count">Showing all projects</div>
+  </aside>
+
+  <!-- CHARTS AREA -->
+  <div class="charts-area">
+
+    <!-- Row 1: Monthly bar (full width) -->
+    <div class="charts-row cols-1">
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">📅 Projects by Month</span>
+          <span class="card-badge" id="monthly-total-badge">—</span>
+        </div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-monthly" role="img" aria-label="Bar chart showing number of projects per month">Projects per month chart.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Designer bar + Approval donut + Status donut -->
+    <div class="charts-row cols-3">
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">👤 Projects by Designer</span>
+        </div>
+        <div class="chart-wrap" id="designer-wrap"><canvas id="c-designer" role="img" aria-label="Horizontal bar chart of projects per designer">Designer projects chart.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">✅ Approval Breakdown</span>
+        </div>
+        <div id="legend-approval" class="legend"></div>
+        <div class="chart-wrap" style="height:175px"><canvas id="c-approval-donut" role="img" aria-label="Donut chart showing approved vs rejected projects">Approval breakdown chart.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">📋 Status Breakdown</span>
+        </div>
+        <div id="legend-status" class="legend"></div>
+        <div class="chart-wrap" style="height:175px"><canvas id="c-status-donut" role="img" aria-label="Donut chart showing project status distribution">Status breakdown chart.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Type by Designer stacked + Type donut + Material donut -->
+    <div class="charts-row cols-3">
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">🏗️ Project Type by Designer</span>
+        </div>
+        <div id="legend-type-designer" class="legend"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-type-designer" role="img" aria-label="Stacked bar chart of project types per designer">Type by designer chart.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">📐 Projects by Type</span>
+        </div>
+        <div id="legend-type" class="legend"></div>
+        <div class="chart-wrap" style="height:175px"><canvas id="c-type-donut" role="img" aria-label="Donut chart of project types">Project type distribution.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">🧱 Projects by Material</span>
+        </div>
+        <div id="legend-material" class="legend"></div>
+        <div class="chart-wrap" style="height:175px"><canvas id="c-material-donut" role="img" aria-label="Donut chart of materials used">Material distribution.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 4: Monthly Trend + Approval by Designer -->
+    <div class="charts-row cols-2">
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">📈 Monthly Approval Trend</span>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Approved</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Rejected</span>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-trend" role="img" aria-label="Line chart showing monthly approval and rejection trends">Monthly trend chart.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">🎯 Approval Status by Designer</span>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Approved</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Rejected</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Pending</span>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-approval-designer" role="img" aria-label="Grouped bar chart of approval status per designer">Approval by designer chart.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 5: Material by Type -->
+    <div class="charts-row cols-1">
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title">🔩 Material Used by Project Type</span>
+        </div>
+        <div id="legend-mat-type" class="legend"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-mat-type" role="img" aria-label="Stacked bar chart of materials per project type">Material by type chart.</canvas></div>
+      </div>
+    </div>
+
+  </div><!-- /charts-area -->
+</div><!-- /layout -->
+
+<!-- DATA TABLE -->
+<div class="table-section">
+  <div class="table-card">
+    <div class="table-header">
+      <h3>📊 Detailed Project Table</h3>
+      <span class="table-count" id="table-count">0 projects</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Project #</th>
+            <th>Type</th>
+            <th>Material</th>
+            <th>Date</th>
+            <th>Designer</th>
+            <th>Status</th>
+            <th>Approval</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ─── DATA ─────────────────────────────────────────── */
+const DESIGNERS = ['Ahmed Hassan','Sara Khalil','Mohamed Ali','Layla Ibrahim','Omar Nasser','Rania Samir'];
+const TYPES = ['Structural','Architectural','MEP','Civil','Interior'];
+const MATERIALS = ['Concrete','Steel','Wood','Glass','Composite'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const STATUSES = ['Done','In Progress','Pending'];
+const APPROVALS = ['Approved','Rejected','Pending'];
+
+// Biased assignments for realistic distribution
+const TYPE_MATERIAL_BIAS = {
+  'Structural': ['Concrete','Steel','Composite'],
+  'Architectural': ['Glass','Wood','Composite'],
+  'MEP': ['Steel','Composite','Concrete'],
+  'Civil': ['Concrete','Steel','Wood'],
+  'Interior': ['Wood','Glass','Composite']
+};
+
+function rnd(seed, max){return ((seed*2654435761)>>>0)%max}
+
+function generateData(){
+  const data=[];
+  for(let i=1;i<=130;i++){
+    const mIdx=(rnd(i*7,12));
+    const day=(rnd(i*13,27))+1;
+    const dIdx=rnd(i*3+1,6);
+    const tIdx=rnd(i*5+2,5);
+    const type=TYPES[tIdx];
+    const matPool=TYPE_MATERIAL_BIAS[type];
+    const material=matPool[rnd(i*11,matPool.length)];
+    let status,approval;
+    const sr=rnd(i*7+3,10);
+    if(sr<6)status='Done';else if(sr<8)status='In Progress';else status='Pending';
+    const ar=rnd(i*13+5,10);
+    if(ar<7)approval='Approved';else if(ar<9)approval='Rejected';else approval='Pending';
+    data.push({
+      id:i,num:`CA-${String(i).padStart(3,'0')}`,
+      type,material,
+      date:`${day} ${MONTHS[mIdx]} 2024`,
+      mIdx,monthName:MONTHS[mIdx],
+      designer:DESIGNERS[dIdx],status,approval
+    });
+  }
+  return data;
+}
+
+const RAW = generateData();
+let FILTERED = [...RAW];
+
+/* ─── CHART INSTANCES ───────────────────────────────── */
+const CI = {};
+function mkChart(id,cfg){if(CI[id])CI[id].destroy();CI[id]=new Chart(document.getElementById(id),cfg);return CI[id]}
+
+/* ─── PALETTE ────────────────────────────────────────── */
+const PAL=['#3b82f6','#22c55e','#f59e0b','#ef4444','#a78bfa','#22d3ee','#fb923c','#f472b6'];
+const APAL=['#22c55e','#ef4444','#f59e0b'];
+
+const chartDefaults={
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,23,42,.95)',titleColor:'#e2e8f0',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,.1)',borderWidth:1,padding:10,callbacks:{}}},
+  scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#64748b',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#64748b',font:{size:11}}}}
+};
+
+function tooltipWithPct(data,total){
+  return {callbacks:{label:ctx=>{
+    const val=ctx.raw||ctx.parsed?.y||0;
+    const pct=total>0?Math.round(val/total*100):0;
+    return ` ${ctx.dataset.label||ctx.label}: ${val} (${pct}%)`;
+  }}};
+}
+
+/* ─── HELPERS ────────────────────────────────────────── */
+function countBy(arr,key){return arr.reduce((a,p)=>{a[p[key]]=(a[p[key]]||0)+1;return a},{});}
+function groupBy(arr,key){return arr.reduce((a,p)=>{(a[p[key]]=a[p[key]]||[]).push(p);return a},{});}
+function mode(arr,key){const c=countBy(arr,key);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0];}
+
+/* ─── POPULATE FILTERS ─────────────────────────────── */
+function populateFilters(){
+  const filters=[
+    {id:'f-month',key:'monthName',opts:MONTHS},
+    {id:'f-type',key:'type',opts:TYPES},
+    {id:'f-material',key:'material',opts:MATERIALS},
+    {id:'f-designer',key:'designer',opts:DESIGNERS},
+    {id:'f-status',key:'status',opts:STATUSES},
+    {id:'f-approval',key:'approval',opts:APPROVALS}
+  ];
+  filters.forEach(f=>{
+    const el=document.getElementById(f.id);
+    f.opts.forEach(o=>{const op=document.createElement('option');op.value=o;op.textContent=o;el.appendChild(op);});
+  });
+}
+
+/* ─── APPLY FILTERS ─────────────────────────────────── */
+function applyFilters(){
+  const fv=v=>document.getElementById(v).value;
+  FILTERED=RAW.filter(p=>
+    (fv('f-month')==='all'||p.monthName===fv('f-month'))&&
+    (fv('f-type')==='all'||p.type===fv('f-type'))&&
+    (fv('f-material')==='all'||p.material===fv('f-material'))&&
+    (fv('f-designer')==='all'||p.designer===fv('f-designer'))&&
+    (fv('f-status')==='all'||p.status===fv('f-status'))&&
+    (fv('f-approval')==='all'||p.approval===fv('f-approval'))
+  );
+  renderDashboard();
+}
+
+function resetFilters(){
+  ['f-month','f-type','f-material','f-designer','f-status','f-approval'].forEach(id=>{
+    document.getElementById(id).value='all';
+  });
+  FILTERED=[...RAW];
+  renderDashboard();
+}
+
+/* ─── KPI CARDS ─────────────────────────────────────── */
+function renderKPIs(){
+  const d=FILTERED;
+  const total=d.length;
+  const approved=d.filter(p=>p.approval==='Approved').length;
+  const rejected=d.filter(p=>p.approval==='Rejected').length;
+  const done=d.filter(p=>p.status==='Done').length;
+  const pctApp=total>0?Math.round(approved/total*100):0;
+  const pctRej=total>0?Math.round(rejected/total*100):0;
+  const designers=[...new Set(d.map(p=>p.designer))].length;
+  const topDesigner=d.length>0?mode(d,'designer'):null;
+  const topType=d.length>0?mode(d,'type'):null;
+  const topMaterial=d.length>0?mode(d,'material'):null;
+
+  const kpis=[
+    {icon:'📁',label:'Total Projects',value:total,sub:'All filtered',cls:'kpi-blue'},
+    {icon:'✅',label:'Approved',value:approved,sub:`${pctApp}% of total`,cls:'kpi-green'},
+    {icon:'❌',label:'Rejected',value:rejected,sub:`${pctRej}% of total`,cls:'kpi-red'},
+    {icon:'✔️',label:'Completed',value:done,sub:'Status: Done',cls:'kpi-green'},
+    {icon:'📊',label:'Approval Rate',value:`${pctApp}%`,sub:'Approved / Total',cls:'kpi-cyan'},
+    {icon:'📉',label:'Rejection Rate',value:`${pctRej}%`,sub:'Rejected / Total',cls:'kpi-red'},
+    {icon:'👥',label:'Designers',value:designers,sub:'Unique',cls:'kpi-purple'},
+    {icon:'🏆',label:'Top Designer',value:topDesigner?topDesigner[0].split(' ')[0]:'—',sub:topDesigner?`${topDesigner[1]} projects`:'',cls:'kpi-gold'},
+    {icon:'🏗️',label:'Top Type',value:topType?topType[0]:'—',sub:topType?`${topType[1]} projects`:'',cls:'kpi-blue'},
+    {icon:'🧱',label:'Top Material',value:topMaterial?topMaterial[0]:'—',sub:topMaterial?`${topMaterial[1]} uses`:'',cls:'kpi-gold'},
+    {icon:'⏳',label:'In Progress',value:d.filter(p=>p.status==='In Progress').length,sub:'Active projects',cls:'kpi-blue'},
+    {icon:'🕐',label:'Pending Approval',value:d.filter(p=>p.approval==='Pending').length,sub:'Awaiting review',cls:'kpi-gold'}
+  ];
+
+  document.getElementById('kpi-grid').innerHTML=kpis.map(k=>`
+    <div class="kpi-card ${k.cls}">
+      <div class="kpi-icon">${k.icon}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('filter-count').textContent=`${total} / ${RAW.length} projects`;
+  document.getElementById('monthly-total-badge').textContent=`${total} projects`;
+}
+
+/* ─── MAKE LEGEND ────────────────────────────────────── */
+function makeLegend(containerId,labels,colors,values,total){
+  document.getElementById(containerId).innerHTML=labels.map((l,i)=>{
+    const pct=total>0?Math.round((values[i]||0)/total*100):0;
+    return `<span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${l}: ${values[i]||0} (${pct}%)</span>`;
+  }).join('');
+}
+
+/* ─── CHART: MONTHLY BAR ─────────────────────────────── */
+function renderMonthly(){
+  const counts=MONTHS.map(m=>FILTERED.filter(p=>p.monthName===m).length);
+  mkChart('c-monthly',{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[{
+      label:'Projects',data:counts,
+      backgroundColor:counts.map(v=>v>0?'rgba(59,130,246,.75)':'rgba(59,130,246,.2)'),
+      borderColor:'#3b82f6',borderWidth:1,borderRadius:5,borderSkipped:false
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,callbacks:{
+        title:ctx=>`Month: ${ctx[0].label}`,
+        label:ctx=>`Projects: ${ctx.raw}`
+      }}},
+      scales:{
+        x:{...chartDefaults.scales.x,ticks:{color:'#64748b',font:{size:11}}},
+        y:{...chartDefaults.scales.y,beginAtZero:true,ticks:{color:'#64748b',font:{size:11},stepSize:1}}
+      }
+    }
+  });
+}
+
+/* ─── CHART: DESIGNER HORIZONTAL BAR ────────────────── */
+function renderDesigner(){
+  const counts=DESIGNERS.map(d=>FILTERED.filter(p=>p.designer===d).length);
+  const h=Math.max(200,DESIGNERS.length*44);
+  document.getElementById('designer-wrap').style.height=h+'px';
+  mkChart('c-designer',{
+    type:'bar',
+    data:{labels:DESIGNERS.map(d=>d.split(' ')[0]),datasets:[{
+      label:'Projects',data:counts,
+      backgroundColor:PAL.slice(0,DESIGNERS.length).map(c=>c+'bb'),
+      borderColor:PAL.slice(0,DESIGNERS.length),
+      borderWidth:1,borderRadius:4,borderSkipped:false
+    }]},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,callbacks:{
+        title:ctx=>`Designer: ${DESIGNERS[ctx[0].dataIndex].split(' ')[0]}`,
+        label:ctx=>`Projects: ${ctx.raw}`
+      }}},
+      scales:{
+        x:{...chartDefaults.scales.x,beginAtZero:true,ticks:{color:'#64748b',font:{size:11}}},
+        y:{...chartDefaults.scales.y,ticks:{color:'#94a3b8',font:{size:11}}}
+      }
+    }
+  });
+}
+
+/* ─── CHART: APPROVAL DONUT ──────────────────────────── */
+function renderApprovalDonut(){
+  const counts=APPROVALS.map(a=>FILTERED.filter(p=>p.approval===a).length);
+  const total=counts.reduce((a,b)=>a+b,0);
+  makeLegend('legend-approval',APPROVALS,APAL,counts,total);
+  mkChart('c-approval-donut',{
+    type:'doughnut',
+    data:{labels:APPROVALS,datasets:[{data:counts,backgroundColor:APAL,borderColor:'#101f3a',borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,...tooltipWithPct(counts,total)}}
+    }
+  });
+}
+
+/* ─── CHART: STATUS DONUT ────────────────────────────── */
+function renderStatusDonut(){
+  const statusCols=['#22c55e','#3b82f6','#64748b'];
+  const counts=STATUSES.map(s=>FILTERED.filter(p=>p.status===s).length);
+  const total=counts.reduce((a,b)=>a+b,0);
+  makeLegend('legend-status',STATUSES,statusCols,counts,total);
+  mkChart('c-status-donut',{
+    type:'doughnut',
+    data:{labels:STATUSES,datasets:[{data:counts,backgroundColor:statusCols,borderColor:'#101f3a',borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,...tooltipWithPct(counts,total)}}
+    }
+  });
+}
+
+/* ─── CHART: TYPE BY DESIGNER STACKED ────────────────── */
+function renderTypeDesigner(){
+  const labels=DESIGNERS.map(d=>d.split(' ')[0]);
+  const datasets=TYPES.map((t,i)=>({
+    label:t,
+    data:DESIGNERS.map(d=>FILTERED.filter(p=>p.designer===d&&p.type===t).length),
+    backgroundColor:PAL[i]+'99',
+    borderColor:PAL[i],borderWidth:1,borderRadius:3,borderSkipped:false
+  }));
+  const allCounts=TYPES.map(t=>FILTERED.filter(p=>p.type===t).length);
+  const total=allCounts.reduce((a,b)=>a+b,0);
+  makeLegend('legend-type-designer',TYPES,PAL,allCounts,total);
+  mkChart('c-type-designer',{
+    type:'bar',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,mode:'index',intersect:false}},
+      scales:{
+        x:{...chartDefaults.scales.x,stacked:true,ticks:{color:'#94a3b8',font:{size:10}}},
+        y:{...chartDefaults.scales.y,stacked:true,beginAtZero:true,ticks:{color:'#64748b',font:{size:10}}}
+      }
+    }
+  });
+}
+
+/* ─── CHART: TYPE DONUT ──────────────────────────────── */
+function renderTypeDonut(){
+  const counts=TYPES.map(t=>FILTERED.filter(p=>p.type===t).length);
+  const total=counts.reduce((a,b)=>a+b,0);
+  makeLegend('legend-type',TYPES,PAL,counts,total);
+  mkChart('c-type-donut',{
+    type:'doughnut',
+    data:{labels:TYPES,datasets:[{data:counts,backgroundColor:PAL.slice(0,5),borderColor:'#101f3a',borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,...tooltipWithPct(counts,total)}}
+    }
+  });
+}
+
+/* ─── CHART: MATERIAL DONUT ─────────────────────────── */
+function renderMaterialDonut(){
+  const matCols=['#f59e0b','#3b82f6','#22c55e','#a78bfa','#22d3ee'];
+  const counts=MATERIALS.map(m=>FILTERED.filter(p=>p.material===m).length);
+  const total=counts.reduce((a,b)=>a+b,0);
+  makeLegend('legend-material',MATERIALS,matCols,counts,total);
+  mkChart('c-material-donut',{
+    type:'doughnut',
+    data:{labels:MATERIALS,datasets:[{data:counts,backgroundColor:matCols,borderColor:'#101f3a',borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,...tooltipWithPct(counts,total)}}
+    }
+  });
+}
+
+/* ─── CHART: MONTHLY TREND ───────────────────────────── */
+function renderTrend(){
+  const approved=MONTHS.map(m=>FILTERED.filter(p=>p.monthName===m&&p.approval==='Approved').length);
+  const rejected=MONTHS.map(m=>FILTERED.filter(p=>p.monthName===m&&p.approval==='Rejected').length);
+  mkChart('c-trend',{
+    type:'line',
+    data:{labels:MONTHS,datasets:[
+      {label:'Approved',data:approved,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e',fill:true},
+      {label:'Rejected',data:rejected,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',tension:.4,pointRadius:4,pointBackgroundColor:'#ef4444',fill:true}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,mode:'index',intersect:false}},
+      scales:{
+        x:{...chartDefaults.scales.x,ticks:{color:'#64748b',font:{size:11}}},
+        y:{...chartDefaults.scales.y,beginAtZero:true,ticks:{color:'#64748b',font:{size:11}}}
+      }
+    }
+  });
+}
+
+/* ─── CHART: APPROVAL BY DESIGNER ───────────────────── */
+function renderApprovalDesigner(){
+  const labels=DESIGNERS.map(d=>d.split(' ')[0]);
+  const datasets=APPROVALS.map((a,i)=>({
+    label:a,
+    data:DESIGNERS.map(d=>FILTERED.filter(p=>p.designer===d&&p.approval===a).length),
+    backgroundColor:APAL[i]+'99',
+    borderColor:APAL[i],borderWidth:1,borderRadius:3,borderSkipped:false
+  }));
+  mkChart('c-approval-designer',{
+    type:'bar',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,mode:'index',intersect:false}},
+      scales:{
+        x:{...chartDefaults.scales.x,ticks:{color:'#94a3b8',font:{size:11}}},
+        y:{...chartDefaults.scales.y,beginAtZero:true,ticks:{color:'#64748b',font:{size:11}}}
+      }
+    }
+  });
+}
+
+/* ─── CHART: MATERIAL BY TYPE ────────────────────────── */
+function renderMatType(){
+  const matCols=['#f59e0b','#3b82f6','#22c55e','#a78bfa','#22d3ee'];
+  const datasets=MATERIALS.map((m,i)=>({
+    label:m,
+    data:TYPES.map(t=>FILTERED.filter(p=>p.type===t&&p.material===m).length),
+    backgroundColor:matCols[i]+'99',
+    borderColor:matCols[i],borderWidth:1,borderRadius:3,borderSkipped:false
+  }));
+  const matCounts=MATERIALS.map(m=>FILTERED.filter(p=>p.material===m).length);
+  const total=matCounts.reduce((a,b)=>a+b,0);
+  makeLegend('legend-mat-type',MATERIALS,matCols,matCounts,total);
+  mkChart('c-mat-type',{
+    type:'bar',
+    data:{labels:TYPES,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults.plugins.tooltip,mode:'index',intersect:false}},
+      scales:{
+        x:{...chartDefaults.scales.x,stacked:true,ticks:{color:'#94a3b8',font:{size:11}}},
+        y:{...chartDefaults.scales.y,stacked:true,beginAtZero:true,ticks:{color:'#64748b',font:{size:11}}}
+      }
+    }
+  });
+}
+
+/* ─── TABLE ─────────────────────────────────────────── */
+function renderTable(){
+  const appBadge=a=>a==='Approved'?'badge-approved':a==='Rejected'?'badge-rejected':'badge-pending-a';
+  const stBadge=s=>s==='Done'?'badge-done':s==='In Progress'?'badge-inprogress':'badge-pending-s';
+  document.getElementById('table-count').textContent=`${FILTERED.length} projects`;
+  document.getElementById('table-body').innerHTML=FILTERED.map(p=>`
+    <tr>
+      <td style="font-family:monospace;font-weight:600;color:#60a5fa">${p.num}</td>
+      <td>${p.type}</td>
+      <td>${p.material}</td>
+      <td style="color:var(--txt2)">${p.date}</td>
+      <td>${p.designer.split(' ')[0]}</td>
+      <td><span class="badge ${stBadge(p.status)}">${p.status}</span></td>
+      <td><span class="badge ${appBadge(p.approval)}">${p.approval}</span></td>
+    </tr>`).join('');
+}
+
+/* ─── MAIN RENDER ───────────────────────────────────── */
+function renderDashboard(){
+  renderKPIs();
+  renderMonthly();
+  renderDesigner();
+  renderApprovalDonut();
+  renderStatusDonut();
+  renderTypeDesigner();
+  renderTypeDonut();
+  renderMaterialDonut();
+  renderTrend();
+  renderApprovalDesigner();
+  renderMatType();
+  renderTable();
+}
+
+/* ─── INIT ─────────────────────────────────────────── */
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+populateFilters();
+renderDashboard();
+</script>
+</body>
+</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ─── EXCEL UPLOAD ──────────────────────────────────── */
+var xRows=[],xHeaders=[];
+var FIELDS=[
+  {key:'num',   label:'Project Number', hints:['project number','project no','proj','number','رقم المشروع','رقم','#']},
+  {key:'type',  label:'Project Type',   hints:['type','project type','نوع المشروع','نوع','category']},
+  {key:'material',label:'Material',     hints:['material','materials','خامة','مادة','المادة']},
+  {key:'date',  label:'Date',           hints:['date','تاريخ','project date','created']},
+  {key:'designer',label:'Designer',     hints:['designer','designed by','مصمم','المصمم','responsible','engineer']},
+  {key:'status',label:'Status',         hints:['status','الحالة','state','حالة']},
+  {key:'approval',label:'Approval',     hints:['approval','approved','موافقة','الموافقة','decision','result']}
+];
+
+function autoMatch(field){
+  var h=field.hints;
+  var idx=xHeaders.findIndex(function(col){return h.some(function(hint){return col.toLowerCase().indexOf(hint.toLowerCase())>=0;});});
+  return idx>=0?xHeaders[idx]:'';
+}
+
+function handleFile(input){
+  var file=input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(rows.length<2){alert('The file seems empty or has only a header row.');return;}
+      xHeaders=rows[0].map(function(h){return String(h||'').trim();}).filter(Boolean);
+      xRows=rows.slice(1).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});});
+      var bar=document.getElementById('file-info-bar');
+      bar.style.display='block';
+      bar.textContent='📂 '+file.name+'  —  '+xRows.length+' rows  ·  '+xHeaders.length+' columns detected';
+      openMapper();
+    }catch(err){alert('Could not read the file. Please make sure it is a valid .xlsx, .xls, or .csv file.\n\n'+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+function openMapper(){
+  document.getElementById('mapper-cols').textContent=' '+xHeaders.join('  ·  ');
+  var grid=document.getElementById('mapper-grid');
+  grid.innerHTML=FIELDS.map(function(f){
+    var auto=autoMatch(f);
+    var opts=xHeaders.map(function(h){return'<option value="'+h+'"'+(auto===h?' selected':'')+'>'+h+'</option>';}).join('');
+    return'<div class="mapper-row"><label>'+f.label+'</label><select id="mp-'+f.key+'"><option value="">— skip —</option>'+opts+'</select></div>';
+  }).join('');
+  document.getElementById('mapper-overlay').style.display='flex';
+}
+
+function closeMapper(){document.getElementById('mapper-overlay').style.display='none';}
+
+function parseXDate(val){
+  if(val===null||val===undefined||val==='')return{date:'Unknown',mIdx:0,monthName:'Jan',year:2024};
+  var d;
+  if(val instanceof Date){d=val;}
+  else if(typeof val==='number'){d=new Date((val-25569)*86400*1000);}
+  else{d=new Date(String(val));}
+  if(isNaN(d.getTime())){
+    var m=String(val).match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+    if(m){var yr=m[3].length===2?'20'+m[3]:m[3];d=new Date(yr+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'));}
+  }
+  if(isNaN(d.getTime()))return{date:String(val),mIdx:0,monthName:'Jan',year:2024};
+  var mi=d.getMonth();
+  return{date:d.getDate()+' '+MONTHS[mi]+' '+d.getFullYear(),mIdx:mi,monthName:MONTHS[mi],year:d.getFullYear()};
+}
+
+function getCol(row,key){
+  var sel=document.getElementById('mp-'+key);
+  if(!sel||!sel.value)return'';
+  var idx=xHeaders.indexOf(sel.value);
+  return idx>=0?String(row[idx]||'').trim():'';
+}
+
+function applyExcelData(){
+  var newData=xRows.map(function(row,i){
+    var sel=document.getElementById('mp-date');
+    var colIdx=sel&&sel.value?xHeaders.indexOf(sel.value):-1;
+    var rawVal=colIdx>=0?row[colIdx]:'';
+    var di=parseXDate(rawVal);
+    return{
+      id:i+1,
+      num:getCol(row,'num')||'R-'+String(i+1).padStart(3,'0'),
+      type:getCol(row,'type')||'Other',
+      material:getCol(row,'material')||'Other',
+      date:di.date,mIdx:di.mIdx,monthName:di.monthName,year:di.year,
+      designer:getCol(row,'designer')||'Unknown',
+      status:getCol(row,'status')||'Unknown',
+      approval:getCol(row,'approval')||'Unknown'
+    };
+  }).filter(function(p){return p.type||p.designer;});
+
+  if(newData.length===0){alert('No valid rows found. Please check your column mapping.');return;}
+
+  function uniq(arr){return arr.filter(function(v,i,a){return v&&a.indexOf(v)===i;});}
+  var newDes=uniq(newData.map(function(p){return p.designer;}));
+  var newTyp=uniq(newData.map(function(p){return p.type;}));
+  var newMat=uniq(newData.map(function(p){return p.material;}));
+  var newSt =uniq(newData.map(function(p){return p.status;}));
+  var newApp=uniq(newData.map(function(p){return p.approval;}));
+
+  DESIGNERS.length=0;newDes.forEach(function(v){DESIGNERS.push(v);});
+  TYPES.length=0;    newTyp.forEach(function(v){TYPES.push(v);});
+  MATERIALS.length=0;newMat.forEach(function(v){MATERIALS.push(v);});
+  STATUSES.length=0; newSt.forEach(function(v){STATUSES.push(v);});
+  APPROVALS.length=0;newApp.forEach(function(v){APPROVALS.push(v);});
+
+  APAL.length=0;
+  var appMap={approved:'#22c55e',rejected:'#ef4444',pending:'#f59e0b',yes:'#22c55e',no:'#ef4444'};
+  newApp.forEach(function(a,i){APAL.push(appMap[a.toLowerCase()]||PAL[i%PAL.length]);});
+
+  RAW.length=0;     newData.forEach(function(p){RAW.push(p);});
+  FILTERED.length=0;FILTERED.push.apply(FILTERED,RAW);
+
+  ['f-month','f-type','f-material','f-designer','f-status','f-approval'].forEach(function(id){
+    var el=document.getElementById(id);
+    while(el.options.length>1)el.remove(1);
+  });
+  populateFilters();
+  closeMapper();
+  renderDashboard();
+
+  var bar=document.getElementById('file-info-bar');
+  bar.textContent='✅ Live Data Active — '+RAW.length+' projects loaded from your file';
+  bar.style.background='rgba(34,197,94,.12)';
+  bar.style.color='#4ade80';
+  bar.style.borderColor='rgba(34,197,94,.25)';
+}
+
+/* ─── DRAG & DROP ───────────────────────────────────── */
+var uz=document.getElementById('upload-zone');
+uz.addEventListener('dragover',function(e){e.preventDefault();uz.classList.add('drag-over');});
+uz.addEventListener('dragleave',function(){uz.classList.remove('drag-over');});
+uz.addEventListener('drop',function(e){
+  e.preventDefault();uz.classList.remove('drag-over');
+  var f=e.dataTransfer.files[0];
+  if(!f)return;
+  var inp=document.getElementById('excel-input');
+  try{var dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;handleFile(inp);}
+  catch(er){alert('Drag & drop not supported here. Please use the Choose File button.');}
+});
+</script>
